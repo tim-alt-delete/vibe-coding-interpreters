@@ -1,29 +1,80 @@
 use rustyline::error::ReadlineError;
-use rustyline::{DefaultEditor, Result};
+use rustyline::{DefaultEditor};
 
 use std::env;
 use std::fs;
 use std::io;
 
-fn run(source: &str) {
-    println!("{}", source);
-    // interpreter logic goes here
-    // let tokens = lex(&line);
-    // dbg!(&tokens);
-    // let ast = parse(tokens);
-    // let result = eval(ast);
-}
+// declares module.
+// It tells the compiler to load that module from a file 
+// (either src/lexer.rs or src/lexer/mod.rs).
+mod lexer;
+use crate::lexer::{Lexer, TokenKind};
 
+mod parser;
+use crate::parser::{Parser, Stmt, Expr};
+
+// mod interpreter;
+
+fn run(source: &str) {
+    //println!("{}", source);
+
+    let mut lexer = Lexer::new(source);
+    let mut tokens = Vec::new();
+
+    // Lexing loop with error handling
+    // while let Ok(token) = lexer.next_token() {
+    //     tokens.push(token.clone());
+    //     println!("{:?}", token);
+
+    //     if matches!(token.kind, TokenKind::Eof) {
+    //         break;
+    //     }
+    // }
+    loop {
+        match lexer.next_token() {
+            Ok(token) => {
+                println!("{:?}", token); // Optional: print tokens as we lex
+                tokens.push(token.clone());
+                if matches!(token.kind, TokenKind::Eof) { break; }
+            }
+            Err(err) => {
+                eprintln!("Lex error: {}", err);
+                std::process::exit(1); // or continue to skip/attempt recovery
+            }
+        }
+    }
+
+    //Parsing tokens into AST
+    let mut parser = Parser::new(tokens);
+    match parser.parse() {
+        Ok(ast) => {
+            println!("{:#?}", ast); // Optional: print AST
+            for stmt in ast {
+                match stmt {
+                    Stmt::Expression(expr) => {
+                        //let value = interpreter::eval(&expr);
+                        // println!("=> {}", value); // Display result
+                    }
+                    _ => {
+                        println!("(unhandled stmt)");
+                    }
+                }
+            }
+        }
+        Err(e) => {
+            eprintln!("Parse error: {:?}", e);
+        }
+    }
+}
 
 fn run_file(filename: &str) -> io::Result<()> {
     let source = fs::read_to_string(filename)?;
-    println!("{}", source);
     run(&source);
     Ok(())
 }
 
-
-fn repl() -> Result<()> {
+fn repl() -> rustyline::Result<()> {
     let mut rl = DefaultEditor::new()?;
     #[cfg(feature = "with-file-history")]
     if rl.load_history("history.txt").is_err() {
@@ -62,6 +113,8 @@ fn repl() -> Result<()> {
 }
 
 fn main() {
+    // $ cargo run foo bar
+    // ["target/debug/my_program", "foo", "bar"]
     let args: Vec<String> = env::args().collect();
     if args.len() == 2 {
         if let Err(e) = run_file(&args[1]) {
