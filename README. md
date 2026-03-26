@@ -1,0 +1,254 @@
+# Lexer
+
+```
+src/
+├── main.rs         // crate root
+└── lexer/          // module: `lexer`
+    ├── mod.rs      // defines the `lexer` module
+    ├── lexer.rs    // submodule: `lexer::lexer`
+    ├── token.rs    // submodule: `lexer::token`
+    └── error.rs    // submodule: `lexer::error`
+├── parser/
+│   ├── mod.rs         <-- re-exports
+│   ├── parser.rs      <-- main parser logic
+│   ├── ast.rs         <-- Expr and Stmt enums (AST)
+│   └── error.rs       <-- ParseError
+```
+
+Currently Supports
+
+## ✅ Lexical Features Supported
+
+### 🔹 **Tokenization**
+
+**Single-character tokens:**
+
+* `(` `)` `{` `}` `,` `.` `-` `+` `;` `*` `/`
+
+**Two-character tokens:**
+
+* `!=` `==` `<=` `>=`
+
+**Literals:**
+
+* ✅ **Number literals**: e.g. `123`, `3.14`
+* ✅ **String literals**: `"quoted text"` (no escape handling yet)
+* ✅ **Identifiers**: e.g. `myVar`, `_temp`, `hello123`
+
+**Keywords (reserved words):**
+
+* `and`, `class`, `else`, `false`, `fun`, `for`, `if`, `nil`, `or`,
+  `print`, `return`, `super`, `this`, `true`, `var`, `while`
+
+**Built-in commands (custom keywords):**
+
+* `echo`, `cd`, `exit`
+
+**Special:**
+
+* `EOF` token at the end of input
+
+---
+
+### 🔹 **Lexeme and Span Tracking**
+
+* ✅ `&'a str` slice for the raw **lexeme** (no allocation for symbols or keywords)
+* ✅ `Span` includes:
+
+  * `start` and `end` byte offsets
+  * `line` and `column` info
+
+This is great for error reporting, debugging, and editor integration.
+
+---
+
+### 🔹 **Error Handling**
+
+Structured via `LexerError`:
+
+* ❌ `UnexpectedChar`: any unknown/unhandled character
+* ❌ `UnterminatedString`: if string literal is not closed
+* (Planned but not yet used): `InvalidNumber`
+
+Each error includes a `Span` for precise location in source.
+
+---
+
+### 🔹 **Infrastructure**
+
+* ✅ Fully modular:
+
+  * `token.rs` → tokens and spans
+  * `error.rs` → structured errors
+  * `lexer.rs` → the scanning logic
+* ✅ Exports via `mod.rs`
+* ✅ Easily integrated into REPL or file runner
+* ✅ No external dependencies (except `rustyline` for REPL)
+
+---
+
+## 🚫 Limitations (Current)
+
+Here’s what the lexer **does not yet support**, which you may want to add later:
+
+| Feature                        | Description                                   |
+| ------------------------------ | --------------------------------------------- |
+| 🔸 Escape sequences in strings | e.g. `"line\nbreak"` or escaped quotes        |
+| 🔸 Unicode identifiers         | Currently only supports ASCII letters and `_` |
+| 🔸 Comment support             | e.g. `// comment` or `# comment`              |
+| 🔸 Multiline strings           | Not supported or recognized                   |
+| 🔸 Raw strings or heredoc      | Not supported                                 |
+| 🔸 Token lookahead             | Not needed yet, but useful for parser context |
+| 🔸 Error recovery              | Currently stops at first error                |
+| 🔸 `InvalidNumber`             | Defined in error enum but not used yet        |
+| 🔸 Character literals          | e.g. `'a'` — not currently tokenized          |
+
+---
+
+## 🧾 TL;DR Summary
+
+| Category                        | Supported |
+| ------------------------------- | --------- |
+| Single/dual tokens              | ✅         |
+| Strings & numbers               | ✅         |
+| Identifiers & keywords          | ✅         |
+| Built-in commands               | ✅         |
+| Span tracking (byte + line/col) | ✅         |
+| Structured error reporting      | ✅         |
+| Lexeme slices (`&str`)          | ✅         |
+| Modular structure for reuse     | ✅         |
+
+Let me know if you want to expand support in any of the above areas — happy to help with escape sequences, comment support, or Unicode next!
+
+
+# TODO
+
+## ✅ You've Already Done
+
+* ✅ Lexing
+* ✅ Span + line/column tracking
+* ✅ Structured error handling
+* ✅ Modular design
+* ✅ Unit tests
+
+---
+
+## 🧱 What’s Left (Core Phases)
+
+### 1. 🧠 **Parser** (next major step)
+
+* Converts tokens into an Abstract Syntax Tree (AST)
+* Typically implemented as:
+
+  * Recursive descent (simple and explicit)
+  * Pratt parsing (better for expressions with precedence)
+* Needs to support:
+
+  * Grouping: `()` and `{}` blocks
+  * Precedence: `+`, `*`, `==`, etc.
+  * Statements: `var`, `print`, `if`, `while`, etc.
+
+---
+
+### 2. 🌲 **AST (Abstract Syntax Tree)**
+
+* Types like:
+
+  ```rust
+  enum Expr {
+      Binary(Box<Expr>, Token, Box<Expr>),
+      Literal(Value),
+      Grouping(Box<Expr>),
+      Variable(String),
+      ...
+  }
+
+  enum Stmt {
+      Expression(Expr),
+      Print(Expr),
+      Var(String, Option<Expr>),
+      ...
+  }
+  ```
+
+* Think of it as the in-memory representation of the source code's structure.
+
+---
+
+### 3. 🧪 **AST Interpreter (Runtime/Evaluator)**
+
+* Walks the AST and evaluates it
+* Example:
+
+  ```rust
+  match expr {
+      Expr::Binary(left, op, right) => { ... },
+      Expr::Literal(Value::Number(n)) => n,
+      ...
+  }
+  ```
+* You'll define an `eval()` function or use a `Visitor` pattern
+
+---
+
+### 4. ❗ **Runtime Error Handling**
+
+* Handle:
+
+  * Division by zero
+  * Undefined variables
+  * Type mismatches (`"hello" + 5`)
+* Integrate with `Span` for error messages:
+
+  ```
+  Runtime error at line 3, column 5: Undefined variable 'foo'
+  ```
+
+---
+
+## 💎 Optional Enhancements and Features
+
+| Feature                   | Description                                          |
+| ------------------------- | ---------------------------------------------------- |
+| **REPL improvements**     | Colorized errors, history, multiline input           |
+| **Escape sequences**      | Handle `\n`, `\"` in strings                         |
+| **Comments**              | Add support for `//` or `#` style comments           |
+| **Better error recovery** | Sync after parser errors to avoid bailing            |
+| **Scope support**         | Track variables in nested blocks                     |
+| **Function support**      | Parsing and calling `fun add(a, b) { ... }`          |
+| **Closures**              | First-class functions with captured variables        |
+| **Static analysis**       | Unused vars, unreachable code warnings               |
+| **Bytecode VM**           | Compile to instructions + build a VM instead of eval |
+
+---
+
+## 📚 If You Want a Roadmap (like *Crafting Interpreters*)
+
+You can follow the phases used in that book:
+
+1. Scanner (done ✅)
+2. Parser (Expr + Stmt nodes)
+3. Interpreter (with env)
+4. Variables and scopes
+5. Functions and closures
+6. Classes and inheritance
+7. Native functions
+8. Garbage collection (if building a VM)
+9. Bytecode compiler
+10. Virtual machine
+
+---
+
+## ✅ TL;DR: Next Major Steps
+
+| Priority | Task                                                   |
+| -------- | ------------------------------------------------------ |
+| 🔜 1.    | Build parser (Expr and Stmt nodes)                     |
+| 🔜 2.    | Define AST (Rust enums for expressions and statements) |
+| 🔜 3.    | Write an evaluator/interpreter                         |
+| ✅ 4.     | Add runtime error reporting with spans                 |
+| 💎 5.    | Add enhancements (functions, scoping, etc.)            |
+
+---
+
+Let me know when you're back and want to start planning your parser — I can help design your AST or walk through Pratt parsing with concrete examples. Enjoy your break!
