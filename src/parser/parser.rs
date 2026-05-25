@@ -21,129 +21,152 @@ impl<'a> Parser<'a> {
     }
 
     fn statement(&mut self) -> Result<Stmt<'a>, ParseError> {
-        if self.match_token(&[TokenKind::Print]) {
-            let expr = self.expression()?;
-            self.consume(TokenKind::Semicolon, "Expected ';' after value.")?;
-            Ok(Stmt::Print(expr))
-
-        }else if self.match_token(&[TokenKind::Var]) {
-            let name = self.consume(TokenKind::Identifier(String::new()), "Expected variable name.")?.clone();
-            let initializer = if self.match_token(&[TokenKind::Equal]) {
-                Some(self.expression()?)
-            } else {
-                None
-            };
-            self.consume(TokenKind::Semicolon, "Expected ';' after variable declaration.")?;
-            Ok(Stmt::Var { name, initializer })
-        } else {
-            let expr = self.expression()?;
-            self.consume(TokenKind::Semicolon, "Expected ';' after expression.")?;
-            Ok(Stmt::Expression(expr))
-        }
+        let expr = self.expression()?;
+        self.consume(TokenKind::Semicolon, "Expected ';' after expression.")?;
+        Ok(Stmt::Expression(expr))
     }
+
+
+    // fn statement(&mut self) -> Result<Stmt<'a>, ParseError> {
+    //     if self.match_token(&[TokenKind::Print]) {
+    //         let expr = self.expression()?;
+    //         self.consume(TokenKind::Semicolon, "Expected ';' after value.")?;
+    //         Ok(Stmt::Print(expr))
+
+    //     }else if self.match_token(&[TokenKind::Var]) {
+    //         let name = self.consume(TokenKind::Identifier(String::new()), "Expected variable name.")?.clone();
+    //         let initializer = if self.match_token(&[TokenKind::Equal]) {
+    //             Some(self.expression()?)
+    //         } else {
+    //             None
+    //         };
+    //         self.consume(TokenKind::Semicolon, "Expected ';' after variable declaration.")?;
+    //         Ok(Stmt::Var { name, initializer })
+    //     } else {
+    //         let expr = self.expression()?;
+    //         self.consume(TokenKind::Semicolon, "Expected ';' after expression.")?;
+    //         Ok(Stmt::Expression(expr))
+    //     }
+    // }
 
     fn expression(&mut self) -> Result<Expr<'a>, ParseError> {
-        self.equality()
+        // For now, primary covers NUMBER, STRING, IDENTIFIER, and grouped expressions.
+        self.unary()
     }
 
-    fn equality(&mut self) -> Result<Expr<'a>, ParseError> {
-        let mut expr = self.comparison()?;
+    // fn equality(&mut self) -> Result<Expr<'a>, ParseError> {
+    //     let mut expr = self.comparison()?;
 
-        while self.match_token(&[TokenKind::BangEqual, TokenKind::EqualEqual]) {
-            let operator = self.previous().clone();
-            let right = self.comparison()?;
-            expr = Expr::Binary {
-                left: Box::new(expr),
-                operator,
-                right: Box::new(right),
-            };
-        }
+    //     while self.match_token(&[TokenKind::BangEqual, TokenKind::EqualEqual]) {
+    //         let operator = self.previous().clone();
+    //         let right = self.comparison()?;
+    //         expr = Expr::Binary {
+    //             left: Box::new(expr),
+    //             operator,
+    //             right: Box::new(right),
+    //         };
+    //     }
 
-        Ok(expr)
-    }
+    //     Ok(expr)
+    // }
 
-    fn comparison(&mut self) -> Result<Expr<'a>, ParseError> {
-        let mut expr = self.term()?;
+    // fn comparison(&mut self) -> Result<Expr<'a>, ParseError> {
+    //     let mut expr = self.term()?;
 
-        while self.match_token(&[TokenKind::Greater, TokenKind::GreaterEqual, TokenKind::Less, TokenKind::LessEqual]) {
-            let operator = self.previous().clone();
-            let right = self.term()?;
-            expr = Expr::Binary {
-                left: Box::new(expr),
-                operator,
-                right: Box::new(right),
-            };
-        }
+    //     while self.match_token(&[TokenKind::Greater, TokenKind::GreaterEqual, TokenKind::Less, TokenKind::LessEqual]) {
+    //         let operator = self.previous().clone();
+    //         let right = self.term()?;
+    //         expr = Expr::Binary {
+    //             left: Box::new(expr),
+    //             operator,
+    //             right: Box::new(right),
+    //         };
+    //     }
 
-        Ok(expr)
-    }
+    //     Ok(expr)
+    // }
 
-    fn term(&mut self) -> Result<Expr<'a>, ParseError> {
-        let mut expr = self.factor()?;
+    // fn term(&mut self) -> Result<Expr<'a>, ParseError> {
+    //     let mut expr = self.factor()?;
 
-        while self.match_token(&[TokenKind::Plus, TokenKind::Minus]) {
-            let operator = self.previous().clone();
-            let right = self.factor()?;
-            expr = Expr::Binary {
-                left: Box::new(expr),
-                operator,
-                right: Box::new(right),
-            };
-        }
+    //     while self.match_token(&[TokenKind::Plus, TokenKind::Minus]) {
+    //         let operator = self.previous().clone();
+    //         let right = self.factor()?;
+    //         expr = Expr::Binary {
+    //             left: Box::new(expr),
+    //             operator,
+    //             right: Box::new(right),
+    //         };
+    //     }
 
-        Ok(expr)
-    }
+    //     Ok(expr)
+    // }
 
-    fn factor(&mut self) -> Result<Expr<'a>, ParseError> {
-        let mut expr = self.unary()?;
+    // fn factor(&mut self) -> Result<Expr<'a>, ParseError> {
+    //     let mut expr = self.unary()?;
 
-        while self.match_token(&[TokenKind::Star, TokenKind::Slash]) {
-            let operator = self.previous().clone();
-            let right = self.unary()?;
-            expr = Expr::Binary {
-                left: Box::new(expr),
-                operator,
-                right: Box::new(right),
-            };
-        }
+    //     while self.match_token(&[TokenKind::Star, TokenKind::Slash]) {
+    //         let operator = self.previous().clone();
+    //         let right = self.unary()?;
+    //         expr = Expr::Binary {
+    //             left: Box::new(expr),
+    //             operator,
+    //             right: Box::new(right),
+    //         };
+    //     }
 
-        Ok(expr)
-    }
+    //     Ok(expr)
+    // }
 
     fn unary(&mut self) -> Result<Expr<'a>, ParseError> {
         if self.match_token(&[TokenKind::Bang, TokenKind::Minus]) {
             let operator = self.previous().clone();
             let right = self.unary()?;
-            Ok(Expr::Unary {
+            return Ok(Expr::Unary {
                 operator,
                 right: Box::new(right),
-            })
+            });
         } else {
             self.primary()
         }
     }
 
+    // fn primary(&mut self) -> Result<Expr<'a>, ParseError> {
+    //     if self.match_token(&[TokenKind::False, TokenKind::True, TokenKind::Nil]) {
+    //         return Ok(Expr::Literal(self.previous().clone()));
+    //     }
+
+    //     if self.match_token(&[TokenKind::NumberLiteral(String::new()), TokenKind::StringLiteral(String::new())]) {
+    //         return Ok(Expr::Literal(self.previous().clone()));
+    //     }
+
+    //     if self.match_token(&[TokenKind::LeftParen]) {
+    //         let expr = self.expression()?;
+    //         self.consume(TokenKind::RightParen, "Expected ')' after expression.")?;
+    //         return Ok(Expr::Grouping(Box::new(expr)));
+    //     }
+
+    //     Err(ParseError::UnexpectedToken {
+    //         expected: "expression".into(),
+    //         found: format!("{:?}", self.peek().kind),
+    //         span: self.peek().span,
+    //     })
+    // }
+
     fn primary(&mut self) -> Result<Expr<'a>, ParseError> {
-        if self.match_token(&[TokenKind::False, TokenKind::True, TokenKind::Nil]) {
+        // Number or string literals or identifiers
+        if self.match_token(&[TokenKind::NumberLiteral(String::new()), TokenKind::StringLiteral(String::new()), TokenKind::Identifier(String::new())]) {
             return Ok(Expr::Literal(self.previous().clone()));
         }
 
-        if self.match_token(&[TokenKind::NumberLiteral(String::new()), TokenKind::StringLiteral(String::new())]) {
-            return Ok(Expr::Literal(self.previous().clone()));
-        }
-
-        if self.match_token(&[TokenKind::LeftParen]) {
-            let expr = self.expression()?;
-            self.consume(TokenKind::RightParen, "Expected ')' after expression.")?;
-            return Ok(Expr::Grouping(Box::new(expr)));
-        }
-
+        // EOF as a primary is unusual; return an error
         Err(ParseError::UnexpectedToken {
             expected: "expression".into(),
             found: format!("{:?}", self.peek().kind),
             span: self.peek().span,
         })
     }
+
 
     fn match_token(&mut self, kinds: &[TokenKind]) -> bool {
         for kind in kinds {

@@ -1,3 +1,134 @@
+# Grammar
+Example Python Grammaer
+https://docs.python.org/3/reference/grammar.html
+
+Lexer → tokens
+Parser → AST (syntax only)
+Resolver/Name analysis (optional) → resolve identifiers, scopes
+Type checker / semantic analyzer → verify operand types, return types, immutability rules, etc.
+Interpreter or codegen → execute or compile, using the validated AST
+
+
+Currently, a trivial grammar is implemented:
+statement -> expression -> unary -> primary
+
+eventually
+statement -> expression -> equality -> comparison -> term -> factor -> unary -> primary
+
+```text
+statement  ::= expression ";" | EOF
+expression ::= primary
+<unary>         ::= ( "!" | "-" ) <unary>
+                  | <primary>
+primary    ::= NUMBER | STRING | IDENTIFIER
+```
+
+
+Binary operator precedence is encoded by the order: 
+logic_or → logic_and → equality → comparison → term → factor → unary → primary (lower to higher precedence).
+
+
+program node is root of AST, and can only have statements or EOF as child nodes.
+
+statements can only have print, var and expressions as child nodes. Etc.
+
+Terminal nodes cannot have any children.
+
+further, children of a node can be thought of as subclasses of their parent node. In this way, statement is a parent type to all other types.
+
+```text
+# Starting Rules
+# =================
+<program>       ::= <statement>* <EOF>
+
+# General Statements
+# ===================
+<statement>     ::= "print" <expression> ";" 
+                  | "var" <identifier> ( "=" <expression> )? ";" 
+                  | <expression> ";"
+
+<expression>    ::= <assignment>
+
+<assignment>    ::= <identifier> "=" <assignment>
+                  | <logic_or>
+
+<logic_or>      ::= <logic_and> ( "or" <logic_and> )*
+
+<logic_and>     ::= <equality> ( "and" <equality> )*
+
+<equality>      ::= <comparison> ( ( "!=" | "==" ) <comparison> )*
+
+<comparison>    ::= <term> ( ( ">" | ">=" | "<" | "<=" ) <term> )*
+
+<term>          ::= <factor> ( ( "+" | "-" ) <factor> )*
+
+<factor>        ::= <unary> ( ( "*" | "/" ) <unary> )*
+
+<unary>         ::= ( "!" | "-" ) <unary>
+                  | <primary>
+
+<primary>       ::= "true"
+                  | "false"
+                  | "nil"
+                  | <number>
+                  | <string>
+                  | <identifier>
+                  | "(" <expression> ")"
+
+# Terminal Nodes
+# ===============
+<identifier>    ::= /* lexical token produced by lexer: identifier name */
+
+<number>        ::= /* numeric literal token */
+
+<string>        ::= /* string literal token */
+
+<EOF>           ::= /* end-of-file token */
+```
+
+
+Example Gammar
+```text
+expression   ::= equality ;
+equality     ::= comparison ( ( "==" | "!=" ) comparison )* ;
+comparison   ::= term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
+term         ::= factor ( ( "+" | "-" ) factor )* ;
+factor       ::= unary ( ( "*" | "/" ) unary )* ;
+unary        ::= ( "!" | "-" ) unary | primary ;
+primary      ::= NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" ;
+```
+
+Generate AST from grammar using lalrpop or pest/peg.
+
+
+Grammar TODO:
+
+    Literals: strings, numbers, booleans, nil (already done)
+    Identifiers and variable references
+    Expression statements and semicolons (done)
+    Unary operators (!, -)
+    Binary operators with precedence (*, /, +, -, comparison, equality)
+    Parentheses/grouping
+    Variable declarations (var/let) and assignments
+    Blocks ( { ... } ) and scoped statements
+    If/else statements
+    While and for loops (start with while; desugar for into while)
+    Return statement and simple function declarations (no closures)
+    Function calls (argument lists) and parameters
+    First-class functions / closures
+    Local scoping and lexical environment fixes
+    Simple static typing / optional type annotations
+    Basic type checker (inference or explicit) and type errors
+    Modules/namespaces and import/export
+    Classes/structs, fields, and methods
+    Inheritance or prototypes (pick one model)
+    Exception handling (try/catch/finally)
+    Generics/templates or parametric polymorphism
+    Macros or compile-time metaprogramming
+    Advanced optimizer/bytecode/codegen and VM or JIT
+
+Start by implementing each feature only in syntax and interpreter semantics, then improve error messages and tooling (formatter, linter, REPL) before moving to complex type systems, modules, and optimization.*
+
 # Lexer
 
 ```
@@ -20,6 +151,8 @@ Currently Supports
 ## ✅ Lexical Features Supported
 
 ### 🔹 **Tokenization**
+
+Tokens are basically lexems with a label. We require token types in order to distinguish between 123 and "123", for example.
 
 **Single-character tokens:**
 

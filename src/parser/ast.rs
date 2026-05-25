@@ -3,18 +3,18 @@ use crate::lexer::token::{Token};
 #[derive(Debug)]
 pub enum Expr<'a> {
     Literal(Token<'a>),
-    Grouping(Box<Expr<'a>>),
+    // Grouping(Box<Expr<'a>>),
     Unary { operator: Token<'a>, right: Box<Expr<'a>> },
-    Binary { left: Box<Expr<'a>>, operator: Token<'a>, right: Box<Expr<'a>> },
+    // Binary { left: Box<Expr<'a>>, operator: Token<'a>, right: Box<Expr<'a>> },
     // In the future: Variable, Assignment, etc.
 }
 
 #[derive(Debug)]
 pub enum Stmt<'a> {
-    Print(Expr<'a>),
+    // Print(Expr<'a>),
     Expression(Expr<'a>),
     // Later: Var, If, While, etc.
-    Var { name: Token<'a>, initializer: Option<Expr<'a>> },
+    // Var { name: Token<'a>, initializer: Option<Expr<'a>> },
 }
 
 // use crate::lexer::token::Token;

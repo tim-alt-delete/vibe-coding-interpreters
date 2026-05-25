@@ -119,12 +119,15 @@ fn main() {
     if args.len() == 2 {
         if let Err(e) = run_file(&args[1]) {
             eprintln!("Error in run_file: {}", e);
+            std::process::exit(1)
         }
     } else if args.len() == 1 {
         if let Err(e) = repl() {
             eprintln!("Error in REPL: {}", e);
+            std::process::exit(1)
         }    
     } else {
         eprintln!("Usage: rox [file]");
+        std::process::exit(1)
     }
 }    
